@@ -3,10 +3,11 @@ from textwrap import wrap
 from collections import Counter
 from suffix_trees import STree
 
+import numpy as np
 import re
 
 nuc = ('A', 'C', 'G', 'T')
-
+#  READING FILES
 def readFasta(fastaFileName):
     """
     Lit un fichier fasta
@@ -33,6 +34,32 @@ def readFasta(fastaFileName):
 
     sequences_list.append(sequence)
     return sequences_list
+
+def readJaspar(jasparFileName) :
+    file = open(jasparFileName)
+    lines = [re.sub(r'\s+', ' ', f.strip()) for f in file]
+
+    mat = []
+
+    i = 1
+    while i < len(lines) :
+        line = lines[i]
+
+        lst = []
+        aux = ""
+
+        for x in line :
+            try :
+                n = int(x)
+            except ValueError :
+                if len(aux) > 0 : lst.append(int(aux))
+                aux = ""
+            else : 
+                aux += x
+
+        mat.append(lst)
+        i += 1
+    return mat
 
 # PREPARING CANDIDATE KMERS
 def searchMotifs(k:int, sequences:list):
@@ -183,11 +210,12 @@ def hamDistance(str1:str, str2:str):
     2
     """
     
-    distance = 0
-    for i in range(len(str1)) :
-        if str1[i] != str2 [i] : distance += 1
-        
-    return distance
+    cpt = 0
+    limit = len(str1)
+    if len(str1) >= len(str2) : limit = len(str2)
+    for i in range(limit) :
+        if str1[i] != str2[i] : cpt += 1
+    return cpt
 
 def totalDistance(motif:str, sequences, k):
     """
@@ -312,3 +340,153 @@ def inexactMatch(kmersV, sequences, stree, v):
         motifs_seq[motif] = candidates
     
     return motif_occur, motifs_seq
+
+# LOCATING THE FIXATION SITE 
+
+# Indexing motifs of a fixed length
+def indexTable(m, sequence):
+    """
+    Indexer les positions d'occurrences de tous les mots de taille k dans une sequence
+    entrée m : taille du mot à chercher dans le motif m <= k
+    entrée sequence : chaine de caractère représentant une sequence d'ADN
+    sortie indexes : dictionaire où les clés sont les mots et les valeurs les positions dans la sequence
+    """
+    indexes  = {}
+    for i in range(len(sequence)) :
+        if i + m > len(sequence) : break
+        
+        aux = sequence[i:i+m] 
+        if aux in indexes : indexes[aux].append(i)
+        else : indexes[aux] = [i]
+
+    return indexes
+
+def chercherWithIndexTable(m, table, sequence, motif, maxVar):
+    """
+    chercher les positions d'un motif dans une séquence en admettant au maximum maxVar variations
+    entrée m : taille du mot à chercher dans le motif m <= k, le meme utilise pour indexer les sequences
+    entrée table : dictionaire où les clés sont les mots et les valeurs les positions dans la sequence
+    entrée sequence : chaine de caractère représentant une sequence d'ADN
+    entrée motif : chaine de caractère représentant le motif à chercher
+    entrée maxVar : le maximum variations entre le motif et un mot de taille k dans la sequence
+    sortie motifPos : dictionnaire où les clés sont les motifs trouvé et les valeurs leurs positions dans la sequence.
+    """
+    k = len(motif)
+    motif = motif.lower()
+    motifPos = dict()
+
+    for cand,pos in table.items() :
+        if cand.lower() in motif :
+            aux_dict = dict()
+            for p in pos :
+                tmp = sequence[p:p+k].lower()
+                if hamDistance(motif,tmp) < maxVar : 
+                    if tmp in aux_dict : aux_dict[tmp].append(p)
+                    else : aux_dict[tmp] = [p]
+            if len(aux_dict) > 0 :
+                for x,lst in aux_dict.items() :
+                    motifPos[x] = lst
+
+    return motifPos
+
+def findMotifData(sequences, motif, m, maxVar):
+    """
+    chercher les positions d'un motif dans un ensemble de séquence d'ADN en admettant un maximum de variations
+    entrée m : taille du mot à chercher dans le motif m <= k, le meme utilise pour indexer les sequences
+    entrée sequences : list contenant les sequence d'ADN
+    entrée motif : chaine de caractère représentant le motif à chercher
+    entrée maxVar : le maximum variations entre le motif et un mot de taille k dans la sequence
+    sortie posList : list contenant les positions dans les sequences ou se trouve le motif.
+    """
+    posDict_seq = dict()
+    i = 0
+    while i < len(sequences) :
+        idx = indexTable(m, sequences[i])
+        posDict = chercherWithIndexTable(m, idx, sequences[i], motif, maxVar)
+        if len(posDict) > 0 : posDict_seq[i] = posDict
+
+        i += 1
+
+    return posDict_seq
+
+# Frequency Matrixes
+def computing_pwm(M, cols):
+    """
+    Calcul la matrice de poids position à partir de la matrice de frequence
+    entrée M : matrice de frequence
+    sortie PWM : matrice de probabilites ou poids position
+    """
+    PWM = M+1
+    sum_col = np.sum(PWM,axis=0)
+
+    return PWM/sum_col
+
+def f0_calcule(PWM, L):
+    """
+    Calcul les valeurs de probabilites d'un modele independant de positions (modele Null)
+    entrée PWM : matrice de probabilites ou poids positions
+    sortie  f_0 : vecteur contenant un modele independant de positions (modele Null)
+    """
+    return np.sum(PWM,axis=1)/L
+
+def loglikehood(seq, PWM, f_0, L):
+	"""
+	Calcul le rapport de vraissemblance entre une sequence et une matrice de poids position
+	entrée PWM : matrice de probabilites ou poids positions
+	entrée f_0 : vecteur contenant le modele independant de positions (modele Null)
+	entrée seq : une sequence d'ADN de taille k, ou k est le nombre de colonnes de PWM
+	sortie ll : rapport de vraissemblance
+	"""
+	L_0 = len(seq)
+	l_win = 0
+	
+	for i in range(L) :
+		x = 3
+		aux = seq[i].lower()
+		if aux == 'a' : x = 0
+		elif aux == 'c' : x = 1
+		elif aux == 'g' : x = 2
+	
+		l_win += np.log2(PWM[x,i]/f_0[x])
+
+	return l_win
+
+def searchPWMOptmiseMotifs(sequences, k, PWM, f_0):
+    """
+    Cherche les positions dans un ensemble de séquence qui maxime le rapport de vraisemblance et elimine les motifs chevauchante
+    entrée sequences : ensemble de séquence d'ADN
+    entrée k : nombre de colonnes d'PWM
+    entrée PWM : matrice de probabilités ou poids positions
+    entrée f_0 : vecteur contenant le modèle indépendant de positions (modèle Null)
+    sortie posList: liste contenant pour chaque séquence la/les positions ayant un rapport de vraisemblance positive
+
+    """
+
+    posList = []
+
+    all_pos = dict()
+
+
+    for i in range(len(sequences)) :
+        seq = sequences[i]
+        limit = len(seq)-k+1
+
+        pos = []
+        prev_pos, prev_log = -1,0
+
+        for j in range(limit) :
+            curr_log = loglikehood(seq[j:j+k],PWM,f_0,k)
+
+            if curr_log > 0 :
+                if j <= prev_pos+k and curr_log > prev_log : 
+                    if prev_pos in pos : pos.remove(prev_pos)
+                else : 
+                    pos.append(j)
+                prev_pos = j
+                prev_log = curr_log
+
+        if len(pos) > 0 :
+            all_pos[i] = pos
+            posList += pos
+    
+    return all_pos

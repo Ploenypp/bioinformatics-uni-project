@@ -20,3 +20,31 @@ Files outside these folders are my rewritten works. Code taken from the original
 
 *currently working on* : `motif_detection.ipynb`
 - generating candidate motifs and detecting their presence in the given data using aforementioend computational algorithms
+
+## Instructions
+
+### Virtual Python Environment Creation
+```
+python -m venv .venv
+```
+
+### Activation
+Linux/Mac
+```
+source .venv/bin/activate # (Linux/Mac)
+```
+
+Windows
+```
+.venv\Scripts\activate 
+```
+
+### Install Dependencies
+pip install -r requirements.txt
+
+
+## Notes for Self
+to update dependencies
+``` 
+pip freeze > requirements.txt
+```

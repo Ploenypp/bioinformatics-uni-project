@@ -15,3 +15,16 @@ def hashtable(seqs:list, kmers:list) :
 
 def hammingDistance(a, b) :
     return sum([1 for i in range(len(a)) if a[i] != b[i]])
+
+def totalDistance(kmer, sequences) :
+    k = len(kmer)
+    total_dist = 0
+
+    for seq in sequences :
+        dist = [hammingDistance(kmer,seq[i:i+k]) for i in range(len(seq)-k+1)]
+        total_dist += min(dist)
+
+    return total_dist
+
+def medianString(seqs:list, kmers:list) :
+    return dict(sorted({k:totalDistance(k,seqs) for k in kmers}.items(), key=lambda item: item[1], reverse=False))

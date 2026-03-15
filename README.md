@@ -18,8 +18,10 @@ By analyzing ChIP-Seq data (Chromatin Immunopreciptation Sequence), a technique 
 
 Files outside these folders are my rewritten works. Code taken from the original professor-provided files will be indicated in the files.
 
+`functions` : contains functions used to process and analyze data as well as JupyterNotebooks with demonstrations of these functions
 
-
+### Walkthrough 
+1. `p1_Identify_Motifs_ipynb` : Identifying Biologically Significant Motifs
 
 *currently working on* : `search_algorithms.py`
 - possibly having to fix the median string algorithm
@@ -35,7 +37,7 @@ python -m venv .venv
 ### Activation
 Linux/Mac
 ```
-source .venv/bin/activate # (Linux/Mac)
+source .venv/bin/activate
 ```
 
 Windows

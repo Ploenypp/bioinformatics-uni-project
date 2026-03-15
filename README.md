@@ -46,7 +46,9 @@ Windows
 ```
 
 ### Install Dependencies
+```
 pip install -r requirements.txt
+```
 
 
 ## Notes for Self

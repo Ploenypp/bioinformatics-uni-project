@@ -1,7 +1,7 @@
 import pandas as pd
 
 def get_seqs_from_fasta(file_name) :
-    f = open(f"./datasets/ChipSeq/{file_name}", "r")
+    f = open(file_name, "r")
     file = f.readlines()
     f.close()
 

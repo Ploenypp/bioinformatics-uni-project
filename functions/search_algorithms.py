@@ -1,4 +1,4 @@
-from seq_process import to_kmers
+from functions.seq_process import to_kmers
 
 def hashtable(seqs:list, kmers:list) :
     n = len(kmers[0])

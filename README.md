@@ -18,10 +18,14 @@ By analyzing ChIP-Seq data (Chromatin Immunopreciptation Sequence), a technique 
 
 Files outside these folders are my rewritten works. Code taken from the original professor-provided files will be indicated in the files.
 
-*currently working on* : `motif_detection.ipynb`
-- generating candidate motifs and detecting their presence in the given data using aforementioend computational algorithms
 
-## Instructions
+
+
+*currently working on* : `search_algorithms.py`
+- possibly having to fix the median string algorithm
+- adding suffix treex and exact/inexact matching
+
+## Instructions for Testing
 
 ### Virtual Python Environment Creation
 ```

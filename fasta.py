@@ -26,13 +26,15 @@ def seqs_info_to_pd(seqs) :
     chromosomes = []
     starts = []
     stops = []
+    sequences = []
 
     for s in seqs.values() :
         chromosomes.append(s["Chromosome"])
         starts.append(s["Start"])
         stops.append(s["Stop"])
+        sequences.append(s["seq"])
     
-    data = {"sequence id":seq_id,"chromosome":chromosomes,"start":starts,"stop":stops}
+    data = {"sequence id":seq_id,"chromosome":chromosomes,"start":starts,"stop":stops, "sequence":sequences}
     return pd.DataFrame(data)
 
 def id_seq(seqs) :
